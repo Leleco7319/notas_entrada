@@ -433,16 +433,13 @@ class ScrapNotaFiscal:
 
     def _fazer_download_nota(self, driver, row):
         """
-        Gera o PDF da nota fiscal usando printToPDF do Chrome e salva direto na pasta de notas fiscais.
+        Executa o download de uma nota fiscal específica.
         
         Args:
             driver: WebDriver do Selenium
             row: Elemento da linha da tabela contendo o botão de download
         """
-        import base64
-        import time
-
-        # Clicar no botão de imprimir normalmente para abrir a visualização da nota
+        # Clicar no botão de imprimir
         botao_imprimir = row.find_element(
             By.CSS_SELECTOR, 
             "td.action-column button[data-action='imprimir']"
@@ -454,25 +451,16 @@ class ScrapNotaFiscal:
             EC.element_to_be_clickable((By.CSS_SELECTOR, ".modal-footer button.btn-success"))
         )
         botao_confirmar.click()
-        time.sleep(2)  # Aguarda a página da nota carregar
-
-        # Gera o PDF da página atual usando o Chrome DevTools Protocol
-        pdf_data = driver.execute_cdp_cmd("Page.printToPDF", {"printBackground": True})
-        pdf_bytes = base64.b64decode(pdf_data['data'])
-        pdf_path = os.path.join(self.download_dir, "nota_fiscal.pdf")
-        with open(pdf_path, "wb") as f:
-            f.write(pdf_bytes)
-        print(f"PDF gerado e salvo em: {pdf_path}")
-
-        # Fechar modal de impressão se ainda estiver aberto
-        try:
-            botao_fechar = WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, ".modal-footer button.btn-secondary"))
-            )
-            botao_fechar.click()
-        except Exception:
-            pass
         time.sleep(1)
+        
+        # Fechar modal
+        botao_fechar = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".modal-footer button.btn-secondary"))
+        )
+        botao_fechar.click()
+        
+        # Aguardar download completar
+        time.sleep(2)
 
     def _organizar_arquivo_baixado(self, month, data_emissao, numero_nota, valor_nota):
         """
@@ -574,7 +562,7 @@ class ScrapNotaFiscal:
             
             next_button.click()
             time.sleep(2)
-            return True
+            return False
             
         except Exception as e:
             print(f"Erro ao navegar para próxima página: {e}")
@@ -702,42 +690,21 @@ class ScrapNotaFiscal:
             options.add_argument(f"user-data-dir={os.path.abspath(profile_dir)}")
             options.add_argument("--disable-download-notification")
             options.add_argument("--kiosk-printing")
-            options.add_argument("--disable-extensions")
-            options.add_argument("--disable-plugins")
-            options.add_argument("--disable-pdf-extension")
-            options.add_argument("--disable-popup-blocking")
-            options.add_argument("--disable-save-password-bubble")
-            options.add_argument("--disable-translate")
-            options.add_argument("--no-first-run")
-            options.add_argument("--no-default-browser-check")
-            
-            # Habilitar logs do navegador
-            options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
             
             # Configurações para download automático de PDFs
             prefs = {
-                "download.default_directory": os.path.abspath(self.download_dir),
+                "download.default_directory": self.download_dir,
                 "download.prompt_for_download": False,
                 "download.directory_upgrade": True,
-                "download.default_filename": "nota_fiscal.pdf",
                 "plugins.always_open_pdf_externally": True,
-                'safebrowsing.enabled': True,
-                "plugins.plugins_disabled": ["Chrome PDF Viewer"],
-                "download.extensions_to_open": "",
-                "download.download_preview_enabled": False,
-                "browser.set_download_behavior": "allow",
-                "browser.helperApps.neverAsk.saveToDisk": "application/pdf,application/octet-stream",
-                "pdfjs.disabled": True,
                 "print.always_print_silent": True,
-                "print.print_preview_sticky_settings.appState": '{"version":2,"isHeaderFooterEnabled":false,"isCssBackgroundEnabled":false,"mediaSize":{"height_microns":297000,"name":"ISO_A4","width_microns":210000,"custom_display_name":"A4"},"customMargins":{},"marginsType":0,"isLandscapeEnabled":false,"isCollateEnabled":true,"copies":1,"color":2,"duplex":0,"headerFooter":{},"shouldPrintBackgrounds":false,"shouldPrintSelectionOnly":false}',
                 "printing.default_destination_selection_rules": {
                     "kind": "local",
                     "namePattern": "Save as PDF",
                 },
-                "printing.print_preview_sticky_settings": {
-                    "appState": '{"version":2,"isHeaderFooterEnabled":false,"isCssBackgroundEnabled":false,"mediaSize":{"height_microns":297000,"name":"ISO_A4","width_microns":210000,"custom_display_name":"A4"},"customMargins":{},"marginsType":0,"isLandscapeEnabled":false,"isCollateEnabled":true,"copies":1,"color":2,"duplex":0,"headerFooter":{},"shouldPrintBackgrounds":false,"shouldPrintSelectionOnly":false}',
-                },
+                "savefile.default_directory": self.download_dir,
                 "browser.download.manager.showWhenStarting": False,
+                "browser.helperApps.neverAsk.saveToDisk": "application/pdf",
                 "print_printer_pdf_printer_settings": {
                     "dpi": 300,
                     "use_system_print_dialog": False,
@@ -746,33 +713,7 @@ class ScrapNotaFiscal:
             options.add_experimental_option("prefs", prefs)
             
             driver = webdriver.Chrome(options=options)
-            
-            # Configura o comportamento de download e impressão após inicializar o driver
-            driver.execute_cdp_cmd('Page.setDownloadBehavior', {
-                'behavior': 'allow',
-                'downloadPath': os.path.abspath(self.download_dir)
-            })
-            
-            # Configurar impressão como PDF automática
-            driver.execute_cdp_cmd('Page.printToPDF', {
-                'landscape': False,
-                'displayHeaderFooter': False,
-                'printBackground': False,
-                'scale': 1,
-                'paperWidth': 8.27,
-                'paperHeight': 11.7,
-                'marginTop': 0,
-                'marginBottom': 0,
-                'marginLeft': 0,
-                'marginRight': 0,
-                'pageRanges': '',
-                'ignoreInvalidPageRanges': False,
-                'headerTemplate': '',
-                'footerTemplate': ''
-            })
-            
-            print(f"Navegador Chrome iniciado com sucesso!")
-            print(f"Diretório de download configurado: {os.path.abspath(self.download_dir)}")
+            print("Navegador Chrome iniciado com sucesso!")
             return driver
 
         except Exception as e:
