@@ -20,6 +20,7 @@ import logging
 from datetime import datetime
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
+import json
 
 # Configuração do logging
 def setup_logging():
@@ -558,7 +559,7 @@ class ScrapNotaFiscal:
             )
             
             if "disabled" in next_button.get_attribute("class"):
-                return False
+                return True
             
             next_button.click()
             time.sleep(2)
@@ -708,7 +709,40 @@ class ScrapNotaFiscal:
                 "print_printer_pdf_printer_settings": {
                     "dpi": 300,
                     "use_system_print_dialog": False,
-                }
+                },
+                "print.default_destination_selection_rules": {
+                    "kind": "local",
+                    "namePattern": "Save as PDF",
+                },
+                "print.print_preview_sticky_settings.appState": json.dumps({
+                    "recentDestinations": [{
+                        "id": "Save as PDF",
+                        "origin": "local",
+                        "account": "",
+                    }],
+                    "selectedDestinationId": "Save as PDF",
+                    "version": 2,
+                    "isHeaderFooterEnabled": False,
+                    "isLandscapeEnabled": False,
+                    "marginsType": 2,  # 0=default, 1=minimum, 2=custom
+                    "customMargins": {
+                        "top": 0,
+                        "bottom": 0,
+                        "left": 0,
+                        "right": 0
+                    },
+                    "scaling": 100,  # 100% da página
+                    "scalingType": 3,  # 3=fit to page
+                    "scalingPdf": 100,
+                    "isScalingDisabled": False,
+                    "isColorEnabled": False,
+                    "isDuplexEnabled": False,
+                    "duplex": 0,
+                    "isLandscapeEnabled": False,
+                    "pagesPerSheet": 1,
+                    "copies": 1,
+                    "defaultPrinter": "Save as PDF"
+                })
             }
             options.add_experimental_option("prefs", prefs)
             
