@@ -643,7 +643,14 @@ class ScrapNotaFiscal:
             solution = capsolver.solve({
                 "type": "ImageToTextTask",
                 "body": base64_string,
-                "module": "common"
+                "module": "common",
+                "borderless": True,
+                "mediaSize": {
+                    "height_microns": 297000,   # A4
+                    "width_microns": 210000,
+                    "name": "ISO_A4",
+                    "custom_display_name": "A4"
+                }
             })
             
             print(f"Captcha resolvido: {solution['text']}")
@@ -741,7 +748,14 @@ class ScrapNotaFiscal:
                     "isLandscapeEnabled": False,
                     "pagesPerSheet": 1,
                     "copies": 1,
-                    "defaultPrinter": "Save as PDF"
+                    "defaultPrinter": "Save as PDF",
+                    "borderless": True,
+                    "mediaSize": {
+                        "height_microns": 297000,   # A4
+                        "width_microns": 210000,
+                        "name": "ISO_A4",
+                        "custom_display_name": "A4"
+                    }
                 })
             }
             options.add_experimental_option("prefs", prefs)
