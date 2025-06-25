@@ -559,11 +559,11 @@ class ScrapNotaFiscal:
             )
             
             if "disabled" in next_button.get_attribute("class"):
-                return True
+                return False
             
             next_button.click()
             time.sleep(2)
-            return False
+            return True
             
         except Exception as e:
             print(f"Erro ao navegar para próxima página: {e}")
