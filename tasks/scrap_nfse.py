@@ -691,81 +691,63 @@ class ScrapNotaFiscal:
             options.add_argument(f"user-data-dir={os.path.abspath(profile_dir)}")
             options.add_argument("--disable-download-notification")
             options.add_argument("--kiosk-printing")
-            options.add_argument("--disable-print-preview")
             
-            # IMPORTANTE: Para forçar o Chrome a não usar o visualizador interno
-            options.add_argument("--disable-pdf-extension")
-            options.add_argument("--disable-plugins-discovery")
-            
+            # Configurações para download automático de PDFs
             prefs = {
-                # Configurações de download
                 "download.default_directory": self.download_dir,
                 "download.prompt_for_download": False,
                 "download.directory_upgrade": True,
-                
-                # CRÍTICO: Força download em vez de visualização
                 "plugins.always_open_pdf_externally": True,
-                "plugins.plugins_disabled": ["Chrome PDF Viewer"],
-                
-                # Configurações de impressão silenciosa
                 "print.always_print_silent": True,
-                "printing.print_preview_sticky_settings.appState": json.dumps({
+                "printing.default_destination_selection_rules": {
+                    "kind": "local",
+                    "namePattern": "Save as PDF",
+                },
+                "savefile.default_directory": self.download_dir,
+                "browser.download.manager.showWhenStarting": False,
+                "browser.helperApps.neverAsk.saveToDisk": "application/pdf",
+                "print_printer_pdf_printer_settings": {
+                    "dpi": 300,
+                    "use_system_print_dialog": False,
+                },
+                "print.default_destination_selection_rules": {
+                    "kind": "local",
+                    "namePattern": "Save as PDF",
+                },
+                "print.print_preview_sticky_settings.appState": json.dumps({
+                    "recentDestinations": [{
+                        "id": "Save as PDF",
+                        "origin": "local",
+                        "account": "",
+                    }],
+                    "selectedDestinationId": "Save as PDF",
                     "version": 2,
                     "isHeaderFooterEnabled": False,
-                    "isLandscapeEnabled": False,  # False = Retrato, True = Paisagem
-                    "marginsType": 2,  # 2 = margens customizadas
+                    "isLandscapeEnabled": False,
+                    "marginsType": 2,  # 0=default, 1=minimum, 2=custom
                     "customMargins": {
-                        "top": 0,     # Margem zero para aproveitamento máximo
+                        "top": 0,
                         "bottom": 0,
                         "left": 0,
                         "right": 0
                     },
-                    "scaling": 100,
-                    "scalingType": 3,  # 3 = ajustar à largura da página
-                    "isColorEnabled": True,  # True para manter cores
+                    "scaling": 100,  # 100% da página
+                    "scalingType": 3,  # 3=fit to page
+                    "scalingPdf": 100,
+                    "isScalingDisabled": False,
+                    "isColorEnabled": False,
                     "isDuplexEnabled": False,
+                    "duplex": 0,
+                    "isLandscapeEnabled": False,
                     "pagesPerSheet": 1,
                     "copies": 1,
-                    
-                    # Configuração do papel A4
-                    "mediaSize": {
-                        "name": "ISO_A4",
-                        "width_microns": 210000,   # 210mm
-                        "height_microns": 297000,  # 297mm
-                        "custom_display_name": "A4"
-                    },
-                    
-                    # Destino padrão
-                    "selectedDestinationId": "Save as PDF",
-                    "recentDestinations": [{
-                        "id": "Save as PDF",
-                        "origin": "local",
-                        "account": ""
-                    }]
-                }),
-                
-                # Configurações do sistema de impressão
-                "printing.default_destination_selection_rules": {
-                    "kind": "local",
-                    "namePattern": "Save as PDF"
-                },
-                
-                # Configurações específicas para PDFs baixados
-                "browser.download.manager.showWhenStarting": False,
-                "browser.helperApps.neverAsk.saveToDisk": "application/pdf",
-                
-                # Configurações do visualizador PDF (caso seja usado)
-                "pdf.default_zoom_level": 0,  # Zoom padrão
-                "pdf.enable_printing": True,
+                    "defaultPrinter": "Save as PDF"
+                })
             }
-            
             options.add_experimental_option("prefs", prefs)
             
-            # Configurações adicionais de janela
-            options.add_argument("--start-maximized")
-            
             driver = webdriver.Chrome(options=options)
-            print("Navegador Chrome configurado para download automático de PDFs!")
+            print("Navegador Chrome iniciado com sucesso!")
             return driver
 
         except Exception as e:
