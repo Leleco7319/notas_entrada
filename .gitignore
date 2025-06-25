@@ -8,6 +8,7 @@ __pycache__
 chrome_profile_*
 notas_fiscais/
 temp/
+logs/
 notas_fiscais.rar
 
 # Node artifact files
